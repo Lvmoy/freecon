@@ -10,17 +10,18 @@ print(dir_path)
 sys.path.append(dir_path)
 from openpose import pyopenpose as op
 
-cam = cv2.VideoCapture(0)
+cam = cv2.VideoCapture(0, cv2.CAP_V4L)
 print(cam.isOpened())
+
 cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1980)
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
 
-
 params = dict()
 params["model_folder"] = "/home/li/Work/openpose/models/"
-params["face"] = True
-params["face_detector"] = 2
-params["body"] = 0
+params["heatmaps_add_parts"] = True
+params["heatmaps_add_bkg"] = True
+params["heatmaps_add_PAFs"] = True
+params["heatmaps_scale"] = 2
 
 
 try:
@@ -30,37 +31,42 @@ try:
     opWrapper.start()
     
     while(True):
+        start = time.time()
         rec, imageToProcess = cam.read()
         if not rec :
             break
 
             # Read image and face rectangle locations
         #imageToProcess = cv2.imread(args[0].image_path)
-        # faceRectangles = [
-        #     op.Rectangle(0.,0.,480.,480.)
-        #     op.Rectangle(330.119385, 277.532715, 48.717274, 48.717274),
-        #     op.Rectangle(24.036991, 267.918793, 65.175171, 65.175171),
-        #     op.Rectangle(151.803436, 32.477852, 108.295761, 108.295761),
-        # ]
-
-        start = time.time()
-        faceRectangles = [
-            op.Rectangle(0.,0.,480.,480.)
-        ]
-
+        print(imageToProcess.shape)
+        height = imageToProcess.shape[0]
+        width = imageToProcess.shape[1]
+       
         # Create new datum
         datum = op.Datum()
         datum.cvInputData = imageToProcess
-        datum.faceRectangles = faceRectangles
-
         # Process and display image
         opWrapper.emplaceAndPop([datum])
+
+        outputImageF = (datum.inputNetData[0].copy())[0,:,:,:] + 0.5
+        outputImageF = cv2.merge([outputImageF[0,:,:], outputImageF[1,:,:], outputImageF[2,:,:]])
+        outputImageF = (outputImageF*255.).astype(dtype='uint8')
+        heatmaps = datum.poseHeatMaps.copy()
+        heatmaps = (heatmaps).astype(dtype='uint8')
+
+        end = time.time()
+        print("model run  time : " , str(end - start))
         cv2.namedWindow("OpenPose 1.4.0 - Tutorial Python API", cv2.WINDOW_NORMAL)
-        print("Face keypoints: \n" + str(datum.faceKeypoints))
-        cv2.imshow("OpenPose 1.4.0 - Tutorial Python API", datum.cvOutputData)
+
+        num_maps = heatmaps.shape[0]
+        heatmap = heatmaps[25, :, :].copy()
+        print(heatmaps)
+        heatmap = cv2.applyColorMap(heatmap, cv2.COLORMAP_JET)
+        combined = cv2.addWeighted(outputImageF, 0.5, heatmap, 0.5, 0)
+        cv2.imshow("OpenPose 1.4.0 - Tutorial Python API", combined)
+
         realend = time.time()
         print("cal and show run  time : " , str(realend - start))
-
 
         #cv2.imshow("hands_video", img)
         if(cv2.waitKey(1)&0xff == ord('q')):
