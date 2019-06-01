@@ -3,9 +3,21 @@ import numpy as np
 import os
 import sys
 import time
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument("-v", "--cudaversion", type=int, choices=[8,9])
+args = parser.parse_args()
 
-#dir_path = os.path.dirname(os.path.realpath(__file__))
-dir_path = '/home/li/Work/openpose/build/python/'
+dir_path = ""
+model_path = ""
+if args.cudaversion == 9:
+    dir_path = '/home/li/Work/openpose-cuda9.0/build/python/'
+    model_path = "/home/li/Work/openpose-cuda9.0/models/"
+
+else:
+    dir_path = '/home/li/Work/openpose-cuda8.0/build/python/'
+    model_path = "/home/li/Work/openpose-cuda8.0/models/"
+
 print(dir_path)
 sys.path.append(dir_path)
 from openpose import pyopenpose as op
@@ -16,7 +28,7 @@ cam.set(cv2.CAP_PROP_FRAME_WIDTH, 1980)
 cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
 
 params = dict()
-params["model_folder"] = "/home/li/Work/openpose/models/"
+params["model_folder"] = model_path
 params["hand"] = True
 params["hand_detector"] = 2
 params["body"] = 0

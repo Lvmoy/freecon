@@ -4,7 +4,6 @@ import os
 import sys
 import time
 import argparse
-
 parser = argparse.ArgumentParser()
 parser.add_argument("-v", "--cudaversion", type=int, choices=[8,9])
 args = parser.parse_args()
@@ -32,7 +31,8 @@ cam.set(cv2.CAP_PROP_FRAME_HEIGHT, 1280)
 params = dict()
 params["model_folder"] = model_path
 params["face"] = True
-params["hand"] = False
+params["hand"] = True
+
 
 try:
     # Starting OpenPose
@@ -45,25 +45,21 @@ try:
         if not rec :
             break
 
-            # Read image and face rectangle locations
-        #imageToProcess = cv2.imread(args[0].image_path)
-        # faceRectangles = [
-        #     op.Rectangle(0.,0.,480.,480.)
-        #     op.Rectangle(330.119385, 277.532715, 48.717274, 48.717274),
-        #     op.Rectangle(24.036991, 267.918793, 65.175171, 65.175171),
-        #     op.Rectangle(151.803436, 32.477852, 108.295761, 108.295761),
-        # ]
-
         start = time.time()
+
 
         # Create new datum
         datum = op.Datum()
-        datum.cvInputData = imageToProcess  
+        datum.cvInputData = imageToProcess
         # Process and display image
         opWrapper.emplaceAndPop([datum])
+
         cv2.namedWindow("OpenPose 1.4.0 - Tutorial Python API", cv2.WINDOW_NORMAL)
+        print("Body keypoints: \n" + str(datum.poseKeypoints))
         print("Face keypoints: \n" + str(datum.faceKeypoints))
-        cv2.imshow("Pose", datum.cvOutputData)
+        print("Left hand keypoints: \n" + str(datum.handKeypoints[0]))
+        print("Right hand keypoints: \n" + str(datum.handKeypoints[1]))
+        cv2.imshow("OpenPose 1.4.0 - Tutorial Python API", datum.cvOutputData)
         realend = time.time()
         print("cal and show run  time : " , str(realend - start))
 
